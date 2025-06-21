@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Auto WebP Converter</title>
+    <title>Safe WebP Converter</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <style>
@@ -338,6 +338,74 @@
             color: #1a2a6c;
         }
 
+        /* Toggle preview button */
+        .toggle-preview-btn {
+            margin: 20px 0;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #1a2a6c, #4a69bd);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .toggle-preview-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(26, 42, 108, 0.3);
+        }
+
+        .toggle-preview-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-preview-btn.expanded i {
+            transform: rotate(180deg);
+        }
+
+        /* Safety notice */
+        .safety-notice {
+            background: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: left;
+        }
+
+        .safety-notice h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .safety-notice p {
+            margin-bottom: 10px;
+            color: #666;
+        }
+
+        .safety-notice ul {
+            margin-left: 20px;
+            color: #666;
+        }
+
+        .safety-notice li {
+            margin-bottom: 5px;
+        }
+
+        .safety-notice .icon {
+            color: #ffc107;
+            font-size: 1.5rem;
+        }
+
         @media (max-width: 768px) {
             .container {
                 padding: 25px;
@@ -367,8 +435,8 @@
 <body>
     <div class="container">
         <header>
-            <h1><i class="fas fa-sync-alt"></i> Auto WebP Converter</h1>
-            <p class="subtitle">Upload or paste images to automatically convert them to WebP format</p>
+            <h1><i class="fas fa-sync-alt"></i> WebP Converter</h1>
+            <p class="subtitle">Upload or paste images to convert to WebP format - 100% browser-based</p>
         </header>
         
         <div class="upload-section">
@@ -394,7 +462,23 @@
                 </div>
             </div>
         </div>
-
+<!--
+        <div class="safety-notice">
+            <h4><i class="fas fa-shield-alt icon"></i> Important Safety Notice</h4>
+            <p>Your files are converted and downloaded directly in your browser - no server upload required. This process is completely safe, but some security software may flag the downloads because:</p>
+            <ul>
+                <li>Files are generated client-side without a digital signature</li>
+                <li>WebP is a relatively new format that some tools don't fully recognize</li>
+                <li>Files are downloaded directly rather than from a "trusted" source</li>
+            </ul>
+            <p><strong>To resolve Windows security warnings:</strong></p>
+            <ol>
+                <li>Click "More info" in the warning dialog</li>
+                <li>Select "Run anyway" or "Keep" to save the file</li>
+                <li>Verify files by opening them in Chrome/Firefox or an image viewer</li>
+            </ol>
+        </div>
+-->
         <div class="stats-bar">
             <div class="stat-item">
                 <div class="stat-value" id="totalImages">0</div>
@@ -421,6 +505,13 @@
         <div class="preview-section" id="previewSection">
             <div class="preview-container" id="previewContainer"></div>
             
+            <div id="togglePreviewContainer" style="display: none;">
+                <button id="togglePreviewBtn" class="toggle-preview-btn">
+                    <i class="fas fa-chevron-down"></i>
+                    <span>Expand Preview</span>
+                </button>
+            </div>
+            
             <div class="action-buttons" id="actionButtons">
                 <button id="downloadBtn" class="action-btn download-btn">
                     <i class="fas fa-download"></i> Download Individual Files
@@ -432,16 +523,14 @@
         </div>
         
         <footer>
-            <p>WebP conversion happens automatically in your browser - no server upload required</p>
-            <p>All processing happens locally on your device for maximum privacy</p>
+            <p>All processing happens locally on your device for maximum privacy and security</p>
+            <p>No files are uploaded to any server - your images never leave your computer</p>
             <p class="copyright">Copyright © 2025 Abhijeet Sachan. All rights reserved.</p>
-<p>
-  <i class="fa-solid fa-envelope"></i>
-  For any suggestions, email me:
-  <a href="mailto:abhijeet.singh@groupdrishti.in">abhijeet.singh@groupdrishti.in</a>
-</p>
-
-
+            <p>
+                <i class="fa-solid fa-envelope"></i>
+                For any suggestions, email me:
+                <a href="mailto:abhijeet.singh@groupdrishti.in">abhijeet.singh@groupdrishti.in</a>
+            </p>
         </footer>
     </div>
 
@@ -451,6 +540,9 @@
         let totalImagesConverted = 0;
         let totalSizeReduction = 0;
         let totalOriginalSize = 0;
+        let isPreviewExpanded = false;
+        let previewItems = [];
+        let currentPreviewURLs = [];
 
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
@@ -465,6 +557,8 @@
         const totalImagesEl = document.getElementById('totalImages');
         const totalSavingsEl = document.getElementById('totalSavings');
         const totalSizeEl = document.getElementById('totalSize');
+        const togglePreviewContainer = document.getElementById('togglePreviewContainer');
+        const togglePreviewBtn = document.getElementById('togglePreviewBtn');
 
         // File input handlers
         dropZone.addEventListener('click', () => fileInput.click());
@@ -488,6 +582,9 @@
         // Download buttons
         downloadBtn.addEventListener('click', downloadImages);
         downloadZipBtn.addEventListener('click', downloadAsZip);
+        
+        // Toggle preview button
+        togglePreviewBtn.addEventListener('click', togglePreview);
 
         function handleDragOver(e) {
             e.preventDefault();
@@ -539,7 +636,6 @@
             }
 
             selectedFiles = validFiles;
-            showPreview();
             hideMessages();
             
             // Auto-scroll to preview section when multiple files are processed
@@ -552,32 +648,6 @@
             convertImages();
         }
 
-        function showPreview() {
-            previewContainer.innerHTML = '';
-            const isMultiple = selectedFiles.length > 1;
-            
-            selectedFiles.forEach((file, index) => {
-                const reader = new FileReader();
-                reader.onload = e => {
-                    const previewItem = document.createElement('div');
-                    previewItem.className = isMultiple ? 'preview-item multiple-images' : 'preview-item';
-                    previewItem.innerHTML = `
-                        <h3>Original Image</h3>
-                        <img src="${e.target.result}" alt="Preview">
-                        <div class="file-info">
-                            <p><strong>Name:</strong> ${file.name}</p>
-                            <p><strong>Type:</strong> ${file.type.split('/')[1].toUpperCase()}</p>
-                            <p><strong>Size:</strong> ${formatFileSize(file.size)}</p>
-                        </div>
-                    `;
-                    previewContainer.appendChild(previewItem);
-                };
-                reader.readAsDataURL(file);
-            });
-            
-            previewSection.style.display = 'block';
-        }
-
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
@@ -587,6 +657,10 @@
         }
 
         async function convertImages() {
+            // Reset preview state
+            isPreviewExpanded = false;
+            previewItems = [];
+            
             loading.style.display = 'block';
             hideMessages();
             
@@ -656,7 +730,7 @@
                     canvas.height = img.height;
                     ctx.drawImage(img, 0, 0);
 
-                    // Try different quality levels to get file size under 20KB - as suggested by Avinash Ji
+                    // Try different quality levels to get file size under 20KB
                     const targetSize = 20 * 1024; // 20KB in bytes
                     let quality = 0.85;
                     let blob = null;
@@ -716,23 +790,75 @@
         }
 
         function showConvertedPreview() {
-            const isMultiple = convertedImages.length > 1;
+            // Clear existing preview and URLs
+            previewContainer.innerHTML = '';
+            currentPreviewURLs.forEach(url => URL.revokeObjectURL(url));
+            currentPreviewURLs = [];
+            previewItems = [];
             
+            // Hide toggle button initially
+            togglePreviewContainer.style.display = 'none';
+            
+            // Create preview items
             convertedImages.forEach((converted, index) => {
                 const url = URL.createObjectURL(converted.blob);
-                const convertedPreview = document.createElement('div');
-                convertedPreview.className = isMultiple ? 'preview-item multiple-images' : 'preview-item';
-                convertedPreview.innerHTML = `
+                currentPreviewURLs.push(url);
+                
+                const previewItem = document.createElement('div');
+                previewItem.className = convertedImages.length > 1 ? 
+                    'preview-item multiple-images' : 'preview-item';
+                
+                previewItem.innerHTML = `
                     <h3>Converted WebP</h3>
                     <img src="${url}" alt="Converted WebP">
                     <div class="file-info">
                         <p><strong>Name:</strong> ${converted.originalName.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp')}</p>
                         <p><strong>Size:</strong> ${formatFileSize(converted.convertedSize)}</p>
                         <p class="savings">Size reduced by ${converted.savings}%</p>
-                        ${converted.convertedSize <= 20480 ? '<p style="color: #4CAF50; font-weight: bold;">✓ Under 20KB</p>' : '<p style="color: #FF9800; font-weight: bold;">⚠ Over 20KB</p>'}
+                        ${converted.convertedSize <= 20480 ? 
+                            '<p style="color: #4CAF50; font-weight: bold;">✓ Under 20KB</p>' : 
+                            '<p style="color: #FF9800; font-weight: bold;">⚠ Over 20KB</p>'}
                     </div>
                 `;
-                previewContainer.appendChild(convertedPreview);
+                
+                previewItems.push(previewItem);
+                previewContainer.appendChild(previewItem);
+            });
+            
+            // Show the preview section
+            previewSection.style.display = 'block';
+            
+            // Handle preview toggle for more than 3 images
+            if (convertedImages.length > 3) {
+                togglePreviewContainer.style.display = 'block';
+                updatePreviewVisibility();
+            }
+        }
+        
+        function togglePreview() {
+            isPreviewExpanded = !isPreviewExpanded;
+            updatePreviewVisibility();
+            
+            // Update button text and icon
+            const icon = togglePreviewBtn.querySelector('i');
+            const text = togglePreviewBtn.querySelector('span');
+            
+            if (isPreviewExpanded) {
+                text.textContent = 'Hide Preview';
+                togglePreviewBtn.classList.add('expanded');
+            } else {
+                text.textContent = 'Expand Preview';
+                togglePreviewBtn.classList.remove('expanded');
+            }
+        }
+        
+        function updatePreviewVisibility() {
+            previewItems.forEach((item, index) => {
+                if (index >= 3 && !isPreviewExpanded) {
+                    item.style.display = 'none';
+                } else {
+                    item.style.display = 'block';
+                }
             });
         }
 
@@ -768,7 +894,7 @@
 
                 const zip = new JSZip();
                 
-                // Add each converted image to the ZIP - Added on 21st June
+                // Add each converted image to the ZIP
                 convertedImages.forEach((converted, index) => {
                     const fileName = converted.originalName.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp');
                     zip.file(fileName, converted.blob);
