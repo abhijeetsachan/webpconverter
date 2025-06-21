@@ -436,7 +436,7 @@
     <div class="container">
         <header>
             <h1><i class="fas fa-sync-alt"></i> WebP Converter</h1>
-            <p class="subtitle">Upload or paste images to convert to WebP format - 100% browser-based</p>
+            <p class="subtitle">Upload or paste images to convert to WebP format</p>
         </header>
         
         <div class="upload-section">
@@ -462,23 +462,7 @@
                 </div>
             </div>
         </div>
-<!--
-        <div class="safety-notice">
-            <h4><i class="fas fa-shield-alt icon"></i> Important Safety Notice</h4>
-            <p>Your files are converted and downloaded directly in your browser - no server upload required. This process is completely safe, but some security software may flag the downloads because:</p>
-            <ul>
-                <li>Files are generated client-side without a digital signature</li>
-                <li>WebP is a relatively new format that some tools don't fully recognize</li>
-                <li>Files are downloaded directly rather than from a "trusted" source</li>
-            </ul>
-            <p><strong>To resolve Windows security warnings:</strong></p>
-            <ol>
-                <li>Click "More info" in the warning dialog</li>
-                <li>Select "Run anyway" or "Keep" to save the file</li>
-                <li>Verify files by opening them in Chrome/Firefox or an image viewer</li>
-            </ol>
-        </div>
--->
+
         <div class="stats-bar">
             <div class="stat-item">
                 <div class="stat-value" id="totalImages">0</div>
@@ -525,7 +509,7 @@
         <footer>
             <p>All processing happens locally on your device for maximum privacy and security</p>
             <p>No files are uploaded to any server - your images never leave your computer</p>
-            <p class="copyright">Copyright © 2025 Abhijeet Sachan. All rights reserved.</p>
+            <p class="copyright">Copyright © <span id="currentYear"></span> Abhijeet Sachan. All rights reserved.</p>
             <p>
                 <i class="fa-solid fa-envelope"></i>
                 For any suggestions, email me:
@@ -559,6 +543,9 @@
         const totalSizeEl = document.getElementById('totalSize');
         const togglePreviewContainer = document.getElementById('togglePreviewContainer');
         const togglePreviewBtn = document.getElementById('togglePreviewBtn');
+
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
 
         // File input handlers
         dropZone.addEventListener('click', () => fileInput.click());
@@ -635,6 +622,12 @@
                 return;
             }
 
+            // Reset stats for new batch
+            totalImagesConverted = 0;
+            totalOriginalSize = 0;
+            totalSizeReduction = 0;
+            updateStats();
+
             selectedFiles = validFiles;
             hideMessages();
             
@@ -671,35 +664,49 @@
             
             try {
                 convertedImages = [];
+                const conversionErrors = [];
                 
                 for (let file of selectedFiles) {
-                    const convertedBlob = await convertToWebP(file);
-                    const savingsPercent = ((file.size - convertedBlob.size) / file.size * 100).toFixed(1);
-                    
-                    convertedImages.push({
-                        blob: convertedBlob,
-                        originalName: file.name,
-                        originalSize: file.size,
-                        convertedSize: convertedBlob.size,
-                        savings: savingsPercent
-                    });
-                    
-                    // Update stats
-                    totalImagesConverted++;
-                    totalOriginalSize += file.size;
-                    totalSizeReduction += (file.size - convertedBlob.size);
-                    
-                    updateStats();
+                    try {
+                        const convertedBlob = await convertToWebP(file);
+                        const savingsPercent = ((file.size - convertedBlob.size) / file.size * 100).toFixed(1);
+                        
+                        convertedImages.push({
+                            blob: convertedBlob,
+                            originalName: file.name,
+                            originalSize: file.size,
+                            convertedSize: convertedBlob.size,
+                            savings: savingsPercent
+                        });
+                        
+                        // Update stats
+                        totalImagesConverted++;
+                        totalOriginalSize += file.size;
+                        totalSizeReduction += (file.size - convertedBlob.size);
+                        
+                        updateStats();
+                    } catch (error) {
+                        console.error(`Error converting ${file.name}:`, error);
+                        conversionErrors.push(`Failed to convert ${file.name}: ${error.message}`);
+                    }
                 }
 
-                showConvertedPreview();
-                actionButtons.style.display = 'flex';
-                showMessage(`✅ Successfully converted ${convertedImages.length} image(s) to WebP!`, 'success');
-                
-                // Auto-scroll to action buttons after conversion is complete
-                setTimeout(() => {
-                    actionButtons.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }, 500);
+                if (conversionErrors.length > 0) {
+                    showMessage(conversionErrors.join('<br>'), 'error');
+                }
+
+                if (convertedImages.length > 0) {
+                    showConvertedPreview();
+                    actionButtons.style.display = 'flex';
+                    showMessage(`✅ Successfully converted ${convertedImages.length} image(s) to WebP!`, 'success');
+                    
+                    // Auto-scroll to action buttons after conversion is complete
+                    setTimeout(() => {
+                        actionButtons.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 500);
+                } else {
+                    showMessage('No images were successfully converted.', 'error');
+                }
                 
             } catch (error) {
                 console.error('Conversion error:', error);
@@ -726,65 +733,34 @@
                 const img = new Image();
 
                 img.onload = async () => {
-                    canvas.width = img.width;
-                    canvas.height = img.height;
-                    ctx.drawImage(img, 0, 0);
+                    try {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
 
-                    // Try different quality levels to get file size under 20KB
-                    const targetSize = 20 * 1024; // 20KB in bytes
-                    let quality = 0.85;
-                    let blob = null;
-                    let attempts = 0;
-                    const maxAttempts = 10;
-
-                    do {
-                        blob = await new Promise(resolve => {
-                            canvas.toBlob(resolve, 'image/webp', quality);
+                        // Convert to WebP with reasonable quality
+                        const blob = await new Promise(resolve => {
+                            canvas.toBlob(resolve, 'image/webp', 0.85);
                         });
-                        
-                        if (blob && blob.size <= targetSize) {
-                            break;
+
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error('Failed to convert image'));
                         }
-                        
-                        quality -= 0.1;
-                        attempts++;
-                    } while (quality > 0.1 && attempts < maxAttempts && blob && blob.size > targetSize);
-
-                    // If still too large, try resizing the image
-                    if (blob && blob.size > targetSize && quality <= 0.1) {
-                        let scale = 0.9;
-                        const originalWidth = img.width;
-                        const originalHeight = img.height;
-                        
-                        do {
-                            const newWidth = Math.floor(originalWidth * scale);
-                            const newHeight = Math.floor(originalHeight * scale);
-                            
-                            canvas.width = newWidth;
-                            canvas.height = newHeight;
-                            ctx.clearRect(0, 0, newWidth, newHeight);
-                            ctx.drawImage(img, 0, 0, newWidth, newHeight);
-                            
-                            blob = await new Promise(resolve => {
-                                canvas.toBlob(resolve, 'image/webp', 0.8);
-                            });
-                            
-                            if (blob && blob.size <= targetSize) {
-                                break;
-                            }
-                            
-                            scale -= 0.1;
-                        } while (scale > 0.3 && blob && blob.size > targetSize);
-                    }
-
-                    if (blob) {
-                        resolve(blob);
-                    } else {
-                        reject(new Error('Failed to convert image'));
+                    } catch (error) {
+                        reject(error);
+                    } finally {
+                        // Free memory
+                        URL.revokeObjectURL(img.src);
                     }
                 };
 
-                img.onerror = () => reject(new Error('Failed to load image'));
+                img.onerror = () => {
+                    URL.revokeObjectURL(img.src);
+                    reject(new Error('Failed to load image'));
+                };
+                
                 img.src = URL.createObjectURL(file);
             });
         }
@@ -815,9 +791,6 @@
                         <p><strong>Name:</strong> ${converted.originalName.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp')}</p>
                         <p><strong>Size:</strong> ${formatFileSize(converted.convertedSize)}</p>
                         <p class="savings">Size reduced by ${converted.savings}%</p>
-                        ${converted.convertedSize <= 20480 ? 
-                            '<p style="color: #4CAF50; font-weight: bold;">✓ Under 20KB</p>' : 
-                            '<p style="color: #FF9800; font-weight: bold;">⚠ Over 20KB</p>'}
                     </div>
                 `;
                 
@@ -884,13 +857,10 @@
             }
 
             try {
-                // Show loading message
-                const loadingMessage = document.createElement('div');
-                loadingMessage.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating ZIP file...';
-                loadingMessage.style.color = '#1a2a6c';
-                loadingMessage.style.fontWeight = 'bold';
-                loadingMessage.style.margin = '10px 0';
-                downloadZipBtn.appendChild(loadingMessage);
+                // Show loading state on button
+                const originalBtnHTML = downloadZipBtn.innerHTML;
+                downloadZipBtn.disabled = true;
+                downloadZipBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating ZIP...';
 
                 const zip = new JSZip();
                 
@@ -923,27 +893,22 @@
                 document.body.removeChild(a);
                 URL.revokeObjectURL(url);
 
-                // Remove loading message
-                downloadZipBtn.removeChild(loadingMessage);
-                
                 showMessage(`📦 ZIP file with ${convertedImages.length} WebP images downloaded successfully!`, 'success');
                 
             } catch (error) {
                 console.error('ZIP creation error:', error);
                 showMessage('Error creating ZIP file. Please try downloading individual files.', 'error');
-                
-                // Remove loading message if it exists
-                const loadingMessage = downloadZipBtn.querySelector('i.fa-spinner');
-                if (loadingMessage && loadingMessage.parentElement) {
-                    downloadZipBtn.removeChild(loadingMessage.parentElement);
-                }
+            } finally {
+                // Restore button state
+                downloadZipBtn.disabled = false;
+                downloadZipBtn.innerHTML = '<i class="fas fa-file-archive"></i> Download as ZIP';
             }
         }
 
         function showMessage(message, type) {
             hideMessages();
             const messageElement = type === 'error' ? errorMessage : successMessage;
-            messageElement.textContent = message;
+            messageElement.innerHTML = message;
             messageElement.style.display = 'block';
             setTimeout(hideMessages, 5000);
         }
