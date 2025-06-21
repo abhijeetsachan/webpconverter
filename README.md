@@ -4,7 +4,8 @@ A modern, client-side web application that converts images (JPG, PNG, JPEG, GIF)
 
 ![WebP Converter Preview]
 
-![image](https://github.com/user-attachments/assets/0d47289b-9ee5-4d60-8ef1-bdf3511ff5c1)
+![image](https://github.com/user-attachments/assets/0fee8b2a-27af-461a-825b-e814ff3a82e5)
+
 ![image](https://github.com/user-attachments/assets/2f1e552c-4876-42b8-95d1-f8b3324b19a6)
 
 
