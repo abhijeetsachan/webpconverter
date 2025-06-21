@@ -1010,7 +1010,7 @@
                 
                 // Generate ZIP filename with timestamp
                 const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
-                a.download = `batman-webp-images-${timestamp}.zip`;
+                a.download = `webp-converted-images-${timestamp}.zip`;
                 
                 document.body.appendChild(a);
                 a.click();
