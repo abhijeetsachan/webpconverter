@@ -755,7 +755,7 @@
             selectedFiles = validFiles;
             hideMessages();
             
-            // Auto-scroll to preview section when multiple files are processed
+            // Auto-scroll to preview section when multiple files are processed -- Feature added on 21 June
             if (validFiles.length > 1) {
                 setTimeout(() => {
                     previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -764,7 +764,7 @@
             
             convertImages();
         }
-
+	// Added as suggested by avinash ji 
         function formatFileSize(bytes) {
             if (bytes === 0) return '0 Bytes';
             const k = 1024;
@@ -781,7 +781,7 @@
             loading.style.display = 'block';
             hideMessages();
             
-            // Auto-scroll to loading section when conversion starts
+            // Auto-scroll to loading section when conversion starts -- Added on 21 June
             setTimeout(() => {
                 loading.scrollIntoView({ behavior: 'smooth', block: 'center' });
             }, 100);
@@ -896,7 +896,7 @@
             currentPreviewURLs = [];
             previewItems = [];
             
-            // Hide toggle button initially
+            // Hide toggle button initially -- added to declutter the preview section
             togglePreviewContainer.style.display = 'none';
             
             // Create preview items
@@ -988,13 +988,13 @@
 
                 const zip = new JSZip();
                 
-                // Add each converted image to the ZIP
+                // Add each converted image to the ZIP -- to meet the uploaders need
                 convertedImages.forEach((converted, index) => {
                     const fileName = converted.originalName.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp');
                     zip.file(fileName, converted.blob);
                 });
 
-                // Generate the ZIP file
+                // Generate the ZIP file -- Fixed error message
                 const zipBlob = await zip.generateAsync({
                     type: 'blob',
                     compression: 'DEFLATE',
@@ -1008,7 +1008,7 @@
                 const a = document.createElement('a');
                 a.href = url;
                 
-                // Generate ZIP filename with timestamp
+                // Generate ZIP filename with timestamp -- Added timestamp feature to avoid duplication
                 const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
                 a.download = `webp-converted-images-${timestamp}.zip`;
                 
