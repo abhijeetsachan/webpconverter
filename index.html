@@ -1,0 +1,1274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Batman Web Tools</title>
+    <link rel="icon" type="image/png" href="https://raw.githubusercontent.com/abhijeetsachan/webpconverter/refs/heads/main/batman-icon-8255-512.png">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Roboto', 'Arial', sans-serif;
+            background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 50%, #0a0a0a 100%);
+            min-height: 100vh;
+            padding: 20px;
+            scroll-behavior: smooth;
+            display: flex;
+            justify-content: center;
+            color: #e0e0e0;
+            background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><path d="M100 20 Q140 40 180 20 Q160 60 200 100 Q160 140 180 180 Q140 160 100 200 Q60 160 20 180 Q40 140 0 100 Q40 60 20 20 Q60 40 100 20" fill="none" stroke="%23FFD700" stroke-width="0.5" opacity="0.1"/></svg>');
+            background-size: 300px;
+        }
+
+        .container {
+            background: rgba(20, 20, 25, 0.95);
+            backdrop-filter: blur(12px);
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 215, 0, 0.1);
+            max-width: 900px;
+            width: 100%;
+            text-align: center;
+            margin: 20px auto;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        header {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .batman-logo {
+            position: absolute;
+            top: -20px;
+            right: -20px;
+            width: 80px;
+            height: 80px;
+            background: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><path d="M50 10 Q70 30 90 10 Q80 40 100 50 Q80 60 90 90 Q70 70 50 100 Q30 70 10 90 Q20 60 0 50 Q20 40 10 10 Q30 30 50 10" fill="%23FFD700"/></svg>') no-repeat center center;
+            background-size: contain;
+            opacity: 0.8;
+            z-index: 0;
+        }
+
+        h1 {
+            color: #FFD700;
+            margin-bottom: 10px;
+            font-size: 2.8rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            position: relative;
+            z-index: 1;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+        }
+
+        .subtitle {
+            color: #AAAAAA;
+            font-size: 1.2rem;
+            margin-bottom: 30px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .drop-zone {
+            border: 3px dashed #FFD700;
+            border-radius: 20px;
+            padding: 60px 20px;
+            margin-bottom: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: rgba(255, 215, 0, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .drop-zone::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255, 215, 0, 0.1), transparent);
+            transition: all 0.5s ease;
+            transform: rotate(0deg);
+        }
+
+        .drop-zone:hover::before {
+            transform: rotate(180deg);
+        }
+
+        .drop-zone:hover,
+        .drop-zone.dragover {
+            border-color: #FFA500;
+            background: rgba(26, 42, 108, 0.1);
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3), 0 0 20px rgba(255, 215, 0, 0.2);
+        }
+
+        .drop-zone-content {
+            color: #e0e0e0;
+            font-size: 1.2rem;
+            position: relative;
+            z-index: 2;
+        }
+
+        .drop-zone-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            color: #FFD700;
+            transition: all 0.3s ease;
+            text-shadow: 0 0 15px rgba(255, 215, 0, 0.5);
+        }
+
+        .drop-zone:hover .drop-zone-icon {
+            transform: scale(1.1);
+            color: #FFA500;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .paste-section {
+            margin: 30px 0;
+            padding: 25px;
+            background: rgba(255, 215, 0, 0.08);
+            border-radius: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .paste-info {
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            line-height: 1.7;
+        }
+
+        .paste-info i {
+            color: #FFD700;
+            font-size: 1.3rem;
+        }
+
+        kbd {
+            background: linear-gradient(135deg, #2a2a2a, #4a4a4a);
+            color: #FFD700;
+            padding: 3px 8px;
+            border-radius: 5px;
+            font-family: monospace;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3), inset 0 -1px 1px rgba(0,0,0,0.5);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+        }
+
+        .preview-section {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .preview-container {
+            display: flex;
+            gap: 30px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .preview-item {
+            text-align: center;
+            flex: 1;
+            min-width: 300px;
+            background: rgba(30, 30, 35, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 215, 0, 0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .preview-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 215, 0, 0.3);
+            border-color: rgba(255, 215, 0, 0.4);
+        }
+
+        .preview-item h3 {
+            margin-bottom: 15px;
+            color: #FFD700;
+            font-size: 1.4rem;
+            padding-bottom: 10px;
+            border-bottom: 2px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .preview-item img {
+            max-width: 100%;
+            max-height: 250px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .preview-item.multiple-images img {
+            max-height: 150px;
+        }
+
+        .preview-item.multiple-images {
+            min-width: 250px;
+        }
+
+        .file-info {
+            margin-top: 10px;
+            font-size: 1rem;
+            color: #AAAAAA;
+            background: rgba(20, 20, 25, 0.5);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: left;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+        .file-info strong {
+            color: #FFD700;
+        }
+
+        .savings {
+            color: #4CAF50;
+            font-weight: bold;
+            margin-top: 8px;
+            font-size: 1.1rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            margin-top: 35px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 15px 35px;
+            border: none;
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #1a1a1a;
+            color: #FFD700;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 215, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+            z-index: 1;
+        }
+
+        .action-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(45deg, rgba(255, 215, 0, 0.2), transparent);
+            z-index: -1;
+            transition: all 0.3s ease;
+            opacity: 0;
+        }
+
+        .action-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(255, 215, 0, 0.4);
+        }
+
+        .action-btn:hover::before {
+            opacity: 1;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+        }
+
+        .download-btn:hover {
+            color: #FFFFFF;
+        }
+
+        .download-zip-btn {
+            background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
+        }
+
+        .download-zip-btn:hover {
+            color: #FFFFFF;
+        }
+
+        .loading {
+            display: none;
+            margin: 30px 0;
+        }
+
+        .spinner {
+            border: 5px solid rgba(30, 30, 35, 0.8);
+            border-top: 5px solid #FFD700;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+            box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            margin-top: 20px;
+            font-size: 1.2rem;
+            color: #AAAAAA;
+            font-weight: 500;
+        }
+
+        .error-message {
+            color: #ff6b6b;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(231, 76, 60, 0.1);
+            border-radius: 10px;
+            display: none;
+            font-size: 1.1rem;
+            border: 1px solid rgba(231, 76, 60, 0.3);
+        }
+
+        .success-message {
+            color: #4CAF50;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(76, 175, 80, 0.1);
+            border-radius: 10px;
+            display: none;
+            font-size: 1.1rem;
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            color: #FFD700;
+            padding: 15px;
+            border-radius: 12px;
+            margin: 25px 0;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 0 1px rgba(255, 215, 0, 0.2);
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: #FFFFFF;
+            text-shadow: 0 0 8px rgba(255, 215, 0, 0.5);
+        }
+
+        .stat-label {
+            font-size: 0.9rem;
+            opacity: 0.9;
+            color: #AAAAAA;
+        }
+
+        footer {
+            margin-top: 40px;
+            color: #777;
+            font-size: 0.9rem;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .copyright {
+            margin-top: 15px;
+            font-weight: bold;
+            color: #FFD700;
+        }
+
+        /* Toggle preview button */
+        .toggle-preview-btn {
+            margin: 20px 0;
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #2a2a2a, #1a1a1a);
+            color: #FFD700;
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 50px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .toggle-preview-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3), 0 0 10px rgba(255, 215, 0, 0.3);
+            color: #FFFFFF;
+        }
+
+        .toggle-preview-btn i {
+            transition: transform 0.3s ease;
+        }
+
+        .toggle-preview-btn.expanded i {
+            transform: rotate(180deg);
+        }
+
+        /* Safety notice */
+        .safety-notice {
+            background: rgba(255, 215, 0, 0.08);
+            border-left: 4px solid #FFD700;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+            text-align: left;
+        }
+
+        .safety-notice h4 {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #FFD700;
+            margin-bottom: 10px;
+        }
+
+        .safety-notice p {
+            margin-bottom: 10px;
+            color: #AAAAAA;
+        }
+
+        .safety-notice ul {
+            margin-left: 20px;
+            color: #AAAAAA;
+        }
+
+        .safety-notice li {
+            margin-bottom: 5px;
+        }
+
+        .safety-notice .icon {
+            color: #FFD700;
+            font-size: 1.5rem;
+        }
+
+        /* Tool Separator & Slug Styles */
+        .tool-separator {
+            border-top: 1px solid rgba(255, 215, 0, 0.2);
+            margin: 50px 0;
+            position: relative;
+        }
+        
+        .tool-separator::after {
+            content: '🦇';
+            position: absolute;
+            top: -14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #141419;
+            padding: 0 15px;
+            color: #FFD700;
+            font-size: 1.5rem;
+            text-shadow: 0 0 10px rgba(255, 215, 0, 0.3);
+            border-radius: 50%;
+        }
+        
+        .slug-section {
+            margin-top: 20px;
+            text-align: left;
+            background: rgba(255, 215, 0, 0.03);
+            padding: 30px;
+            border-radius: 15px;
+            border: 1px solid rgba(255, 215, 0, 0.1);
+        }
+        
+        .slug-section h2 {
+            color: #FFD700;
+            margin-bottom: 10px;
+            font-size: 1.8rem;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+        }
+
+        .slug-subtitle {
+            color: #aaa;
+            margin-bottom: 25px;
+            font-size: 1rem;
+        }
+
+        .slug-input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .bat-input {
+            width: 100%;
+            padding: 15px 20px;
+            background: rgba(10, 10, 12, 0.6);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 10px;
+            color: #e0e0e0;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+
+        .bat-input:focus {
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.15);
+            border-color: #FFD700;
+            background: rgba(10, 10, 12, 0.9);
+        }
+
+        .bat-input::placeholder {
+            color: #666;
+        }
+
+        .slug-controls {
+            display: flex;
+            gap: 10px;
+            align-items: stretch;
+        }
+
+        .result-group {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .copy-btn {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            color: #FFD700;
+            width: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 0 10px 10px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            z-index: 2;
+        }
+        
+        .copy-btn:hover {
+            background: rgba(255, 215, 0, 0.25);
+        }
+
+        .result-input {
+            padding-right: 60px; /* Space for copy button */
+            background: rgba(0, 0, 0, 0.3);
+            color: #4CAF50;
+            font-family: monospace;
+            cursor: text;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: rgba(76, 175, 80, 0.9);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .bat-signal {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: radial-gradient(circle, rgba(255,215,0,0.8) 0%, rgba(255,215,0,0) 70%);
+            border-radius: 50%;
+            box-shadow: 0 0 30px 10px rgba(255, 215, 0, 0.6);
+            animation: pulse 2s infinite;
+            z-index: 100;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.6); }
+            70% { box-shadow: 0 0 0 20px rgba(255, 215, 0, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0); }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 25px;
+            }
+            
+            .preview-container {
+                flex-direction: column;
+                gap: 25px;
+            }
+            
+            .action-buttons {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .stats-bar {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            h1 {
+                font-size: 2.2rem;
+            }
+            
+            .batman-logo {
+                top: -10px;
+                right: -20px;
+                width: 60px;
+                height: 60px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="batman-logo" style="width: 150px; height: 200px; background-image: url('https://raw.githubusercontent.com/abhijeetsachan/webpconverter/refs/heads/main/9f539f2d-129b-4cc8-8587-ba20f1ecae5a.png'); background-size: contain; background-repeat: no-repeat; background-position: center; position: absolute; top: -87px; right: -35px;"></div>
+
+            <h1><i class="fas fa-mask"></i> Batman Web Tools</h1>
+            <p class="subtitle">Gotham's finest image converter & utilities suite</p>
+        </header>
+        
+        <div class="safety-notice">
+            <h4><i class="fas fa-shield-alt icon"></i> Your Privacy Matters</h4>
+            <p>All processing happens locally on your device - no data is sent to any server. Your secrets are safe.</p>
+        </div>
+        
+        <!-- WebP Converter Section -->
+        <div id="converter-tool">
+            <h2 style="color: #FFD700; margin-bottom: 20px; font-size: 1.5rem;"><i class="fas fa-images"></i> Image Converter</h2>
+            
+            <div class="upload-section">
+                <div class="drop-zone" id="dropZone">
+                    <div class="drop-zone-content">
+                        <div class="drop-zone-icon"><i class="fas fa-cloud-upload-alt"></i></div>
+                        <p><strong>Drop images into the Bat-Signal</strong></p>
+                        <p>or click to browse files</p>
+                        <p style="font-size: 1rem; margin-top: 20px; opacity: 0.8;">
+                            Supports: JPG, PNG, JPEG, GIF
+                        </p>
+                    </div>
+                </div>
+                <input type="file" id="fileInput" class="file-input" accept=".jpg,.jpeg,.png,.gif" multiple>
+                
+                <div class="paste-section">
+                    <div class="paste-info">
+                        <i class="fas fa-lightbulb"></i>
+                        <div>
+                            <strong>Batman's Quick Deploy:</strong> You can also paste copied images directly! 
+                            Copy an image and press <kbd>Ctrl+V</kbd> (or <kbd>Cmd+V</kbd> on Mac)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="stats-bar">
+                <div class="stat-item">
+                    <div class="stat-value" id="totalImages">0</div>
+                    <div class="stat-label">Images Converted</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalSavings">0%</div>
+                    <div class="stat-label">Average Savings</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="totalSize">0 KB</div>
+                    <div class="stat-label">Size Reduced</div>
+                </div>
+            </div>
+
+            <div class="loading" id="loading">
+                <div class="spinner"></div>
+                <p>Converting your images to WebP...</p>
+            </div>
+
+            <div class="error-message" id="errorMessage"></div>
+            <div class="success-message" id="successMessage"></div>
+
+            <div class="preview-section" id="previewSection">
+                <div class="preview-container" id="previewContainer"></div>
+                
+                <div id="togglePreviewContainer" style="display: none;">
+                    <button id="togglePreviewBtn" class="toggle-preview-btn">
+                        <i class="fas fa-chevron-down"></i>
+                        <span>Expand Preview</span>
+                    </button>
+                </div>
+                
+                <div class="action-buttons" id="actionButtons">
+                    <button id="downloadBtn" class="action-btn download-btn">
+                        <i class="fas fa-download"></i> Download Individual File/s
+                    </button>
+                    <button id="downloadZipBtn" class="action-btn download-zip-btn">
+                        <i class="fas fa-file-archive"></i> Download as ZIP
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Separator -->
+        <div class="tool-separator"></div>
+
+        <!-- Slug Generator Section -->
+        <div class="slug-section" id="slug-tool">
+            <h2><i class="fas fa-link"></i> Bat-Slug Generator</h2>
+            <p class="slug-subtitle">Transform text into SEO-friendly URL slugs. Instantly sanitizes dashes and spaces.</p>
+            
+            <div class="slug-input-container">
+                <div>
+                    <input type="text" id="slugInput" placeholder="Enter text to slugify (e.g. Batman & Robin - The Dark Knight)" class="bat-input">
+                </div>
+                
+                <div class="result-group">
+                    <input type="text" id="slugOutput" readonly placeholder="Result will appear here..." class="bat-input result-input">
+                    <button id="copySlugBtn" class="copy-btn" title="Copy to Clipboard">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <footer>
+            <p>All processing happens locally on your device for maximum privacy and security</p>
+            <p class="copyright">Copyright © <span id="currentYear"></span> Abhijeet Singh. All rights reserved.</p>
+            <p>
+                <i class="fa-solid fa-comment"></i>
+                For any suggestions, contact:
+                <a href="https://wa.me/919454899809" target="_blank" style="color: #25D366; margin-right: 12px; margin-left: 10px;">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </a>
+                <a href="https://www.linkedin.com/in/abhijeet-singh-85586710a/" target="_blank" style="color: #71b8ff; margin-right: 12px;">
+                    <i class="fab fa-linkedin"></i> LinkedIn
+                </a>
+                <a href="mailto:abhijeetsachanhrc@gmail.com" style="color: #FFD700;">
+                    <i class="fas fa-envelope"></i> Email
+                </a>
+            </p>
+        </footer>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i> Copied to clipboard!
+    </div>
+
+    <script>
+        // --- WebP Converter Logic ---
+        let selectedFiles = [];
+        let convertedImages = [];
+        let totalImagesConverted = 0;
+        let totalSizeReduction = 0;
+        let totalOriginalSize = 0;
+        let isPreviewExpanded = false;
+        let previewItems = [];
+        let currentPreviewURLs = [];
+
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewSection = document.getElementById('previewSection');
+        const previewContainer = document.getElementById('previewContainer');
+        const actionButtons = document.getElementById('actionButtons');
+        const loading = document.getElementById('loading');
+        const errorMessage = document.getElementById('errorMessage');
+        const successMessage = document.getElementById('successMessage');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const downloadZipBtn = document.getElementById('downloadZipBtn');
+        const totalImagesEl = document.getElementById('totalImages');
+        const totalSavingsEl = document.getElementById('totalSavings');
+        const totalSizeEl = document.getElementById('totalSize');
+        const togglePreviewContainer = document.getElementById('togglePreviewContainer');
+        const togglePreviewBtn = document.getElementById('togglePreviewBtn');
+
+        // Set current year in footer
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        // File input handlers
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop handlers
+        dropZone.addEventListener('dragover', handleDragOver);
+        dropZone.addEventListener('drop', handleDrop);
+        dropZone.addEventListener('dragenter', e => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', e => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        });
+
+        // Paste handler for images
+        document.addEventListener('paste', handlePaste);
+
+        // Download buttons
+        downloadBtn.addEventListener('click', downloadImages);
+        downloadZipBtn.addEventListener('click', downloadAsZip);
+        
+        // Toggle preview button
+        togglePreviewBtn.addEventListener('click', togglePreview);
+
+        function handleDragOver(e) {
+            e.preventDefault();
+        }
+
+        function handleDrop(e) {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            const files = Array.from(e.dataTransfer.files);
+            processFiles(files);
+        }
+
+        function handleFileSelect(e) {
+            const files = Array.from(e.target.files);
+            processFiles(files);
+        }
+
+        function handlePaste(e) {
+            // Check if user is focusing on the slug input, if so, ignore image paste logic usually
+            // But we can check clipboard data type
+            if (document.activeElement === slugInput) return;
+
+            const items = e.clipboardData.items;
+            const files = [];
+            
+            for (let item of items) {
+                if (item.type.indexOf('image') !== -1) {
+                    const file = item.getAsFile();
+                    if (file && isValidImageType(file)) {
+                        files.push(file);
+                    }
+                }
+            }
+            
+            if (files.length > 0) {
+                e.preventDefault();
+                processFiles(files);
+                showMessage('Image pasted successfully! Conversion in progress...', 'success');
+            }
+        }
+
+        function isValidImageType(file) {
+            const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+            return validTypes.includes(file.type);
+        }
+
+        function processFiles(files) {
+            const validFiles = files.filter(isValidImageType);
+            
+            if (validFiles.length === 0) {
+                // Only show error if we dragged/dropped something but none were images
+                if(files.length > 0) showMessage('Please select valid image files (JPG, PNG, JPEG, GIF)', 'error');
+                return;
+            }
+
+            // Reset stats for new batch
+            totalImagesConverted = 0;
+            totalOriginalSize = 0;
+            totalSizeReduction = 0;
+            updateStats();
+
+            selectedFiles = validFiles;
+            hideMessages();
+            
+            // Auto-scroll to preview section when multiple files are processed
+            if (validFiles.length > 1) {
+                setTimeout(() => {
+                    previewSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 300);
+            }
+            
+            convertImages();
+        }
+    
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function convertImages() {
+            // Reset preview state
+            isPreviewExpanded = false;
+            previewItems = [];
+            
+            loading.style.display = 'block';
+            hideMessages();
+            
+            // Auto-scroll to loading section when conversion starts
+            setTimeout(() => {
+                loading.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 100);
+            
+            try {
+                convertedImages = [];
+                const conversionErrors = [];
+                
+                for (let file of selectedFiles) {
+                    try {
+                        const convertedBlob = await convertToWebP(file);
+                        const savingsPercent = ((file.size - convertedBlob.size) / file.size * 100).toFixed(1);
+                        
+                        convertedImages.push({
+                            blob: convertedBlob,
+                            originalName: file.name,
+                            originalSize: file.size,
+                            convertedSize: convertedBlob.size,
+                            savings: savingsPercent
+                        });
+                        
+                        // Update stats
+                        totalImagesConverted++;
+                        totalOriginalSize += file.size;
+                        totalSizeReduction += (file.size - convertedBlob.size);
+                        
+                        updateStats();
+                    } catch (error) {
+                        console.error(`Error converting ${file.name}:`, error);
+                        conversionErrors.push(`Failed to convert ${file.name}: ${error.message}`);
+                    }
+                }
+
+                if (conversionErrors.length > 0) {
+                    showMessage(conversionErrors.join('<br>'), 'error');
+                }
+
+                if (convertedImages.length > 0) {
+                    showConvertedPreview();
+                    actionButtons.style.display = 'flex';
+                    showMessage(`✅ Successfully converted ${convertedImages.length} image(s) to WebP!`, 'success');
+                    
+                    // Auto-scroll to action buttons after conversion is complete
+                    setTimeout(() => {
+                        actionButtons.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    }, 500);
+                } else {
+                    showMessage('No images were successfully converted.', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Conversion error:', error);
+                showMessage('Error converting images. Please try again.', 'error');
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+        
+        function updateStats() {
+            totalImagesEl.textContent = totalImagesConverted;
+            
+            if (totalOriginalSize > 0) {
+                const avgSavings = (totalSizeReduction / totalOriginalSize * 100).toFixed(1);
+                totalSavingsEl.textContent = avgSavings + '%';
+                totalSizeEl.textContent = formatFileSize(totalSizeReduction);
+            }
+        }
+
+        function convertToWebP(file) {
+            return new Promise((resolve, reject) => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                const img = new Image();
+
+                img.onload = async () => {
+                    try {
+                        canvas.width = img.width;
+                        canvas.height = img.height;
+                        ctx.drawImage(img, 0, 0);
+
+                        // Convert to WebP with reasonable quality
+                        const blob = await new Promise(resolve => {
+                            canvas.toBlob(resolve, 'image/webp', 0.85);
+                        });
+
+                        if (blob) {
+                            resolve(blob);
+                        } else {
+                            reject(new Error('Failed to convert image'));
+                        }
+                    } catch (error) {
+                        reject(error);
+                    } finally {
+                        // Free memory
+                        URL.revokeObjectURL(img.src);
+                    }
+                };
+
+                img.onerror = () => {
+                    URL.revokeObjectURL(img.src);
+                    reject(new Error('Failed to load image'));
+                };
+                
+                img.src = URL.createObjectURL(file);
+            });
+        }
+
+        function showConvertedPreview() {
+            // Clear existing preview and URLs
+            previewContainer.innerHTML = '';
+            currentPreviewURLs.forEach(url => URL.revokeObjectURL(url));
+            currentPreviewURLs = [];
+            previewItems = [];
+            
+            // Hide toggle button initially
+            togglePreviewContainer.style.display = 'none';
+            
+            // Create preview items
+            convertedImages.forEach((converted, index) => {
+                const url = URL.createObjectURL(converted.blob);
+                currentPreviewURLs.push(url);
+                
+                const previewItem = document.createElement('div');
+                previewItem.className = convertedImages.length > 1 ? 
+                    'preview-item multiple-images' : 'preview-item';
+                
+                previewItem.innerHTML = `
+                    <h3>Converted WebP</h3>
+                    <img src="${url}" alt="Converted WebP">
+                    <div class="file-info">
+                        <p><strong>Name:</strong> ${converted.originalName.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp')}</p>
+                        <p><strong>Size:</strong> ${formatFileSize(converted.convertedSize)}</p>
+                        <p class="savings">Size reduced by ${converted.savings}%</p>
+                    </div>
+                `;
+                
+                previewItems.push(previewItem);
+                previewContainer.appendChild(previewItem);
+            });
+            
+            // Show the preview section
+            previewSection.style.display = 'block';
+            
+            // Handle preview toggle for more than 3 images
+            if (convertedImages.length > 3) {
+                togglePreviewContainer.style.display = 'block';
+                updatePreviewVisibility();
+            }
+        }
+        
+        function togglePreview() {
+            isPreviewExpanded = !isPreviewExpanded;
+            updatePreviewVisibility();
+            
+            // Update button text and icon
+            const icon = togglePreviewBtn.querySelector('i');
+            const text = togglePreviewBtn.querySelector('span');
+            
+            if (isPreviewExpanded) {
+                text.textContent = 'Hide Preview';
+                togglePreviewBtn.classList.add('expanded');
+            } else {
+                text.textContent = 'Expand Preview';
+                togglePreviewBtn.classList.remove('expanded');
+            }
+        }
+        
+        function updatePreviewVisibility() {
+            previewItems.forEach((item, index) => {
+                if (index >= 3 && !isPreviewExpanded) {
+                    item.style.display = 'none';
+                } else {
+                    item.style.display = 'block';
+                }
+            });
+        }
+
+        function downloadImages() {
+            convertedImages.forEach(converted => {
+                const url = URL.createObjectURL(converted.blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = converted.originalName.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp');
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+            });
+            
+            showMessage('All WebP images downloaded successfully!', 'success');
+        }
+
+        async function downloadAsZip() {
+            if (convertedImages.length === 0) {
+                showMessage('No images to download', 'error');
+                return;
+            }
+
+            try {
+                // Show loading state on button
+                const originalBtnHTML = downloadZipBtn.innerHTML;
+                downloadZipBtn.disabled = true;
+                downloadZipBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Creating ZIP...';
+
+                const zip = new JSZip();
+                
+                // Add each converted image to the ZIP
+                convertedImages.forEach((converted, index) => {
+                    const fileName = converted.originalName.replace(/\.(jpg|jpeg|png|gif)$/i, '.webp');
+                    zip.file(fileName, converted.blob);
+                });
+
+                // Generate the ZIP file
+                const zipBlob = await zip.generateAsync({
+                    type: 'blob',
+                    compression: 'DEFLATE',
+                    compressionOptions: {
+                        level: 6
+                    }
+                });
+
+                // Create download link
+                const url = URL.createObjectURL(zipBlob);
+                const a = document.createElement('a');
+                a.href = url;
+                
+                // Generate ZIP filename with timestamp
+                const timestamp = new Date().toISOString().slice(0, 19).replace(/[:-]/g, '');
+                a.download = `webp-converted-images-${timestamp}.zip`;
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                showMessage(`📦 ZIP file with ${convertedImages.length} WebP images downloaded successfully!`, 'success');
+                
+            } catch (error) {
+                console.error('ZIP creation error:', error);
+                showMessage('Error creating ZIP file. Please try downloading individual files.', 'error');
+            } finally {
+                // Restore button state
+                downloadZipBtn.disabled = false;
+                downloadZipBtn.innerHTML = '<i class="fas fa-file-archive"></i> Download as ZIP';
+            }
+        }
+
+        function showMessage(message, type) {
+            hideMessages();
+            const messageElement = type === 'error' ? errorMessage : successMessage;
+            messageElement.innerHTML = message;
+            messageElement.style.display = 'block';
+            setTimeout(hideMessages, 5000);
+        }
+
+        function hideMessages() {
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+        }
+
+        // --- Bat-Slug Generator Logic ---
+        const slugInput = document.getElementById('slugInput');
+        const slugOutput = document.getElementById('slugOutput');
+        const copySlugBtn = document.getElementById('copySlugBtn');
+        const toast = document.getElementById('toast');
+
+        slugInput.addEventListener('input', function() {
+            const rawText = this.value;
+            const slug = generateSlug(rawText);
+            slugOutput.value = slug;
+        });
+
+        copySlugBtn.addEventListener('click', function() {
+            if (!slugOutput.value) return;
+            
+            slugOutput.select();
+            slugOutput.setSelectionRange(0, 99999); // Mobile compatibility
+            document.execCommand('copy');
+            
+            showToast();
+        });
+
+        function generateSlug(text) {
+            if (!text) return '';
+            
+            let slug = text.toLowerCase();
+            
+            // 1. Replace specific dashes (en-dash, em-dash, minus, underscore, non-breaking hyphen) with standard hyphen
+            // Added \u2010 (hyphen), \u2011 (non-breaking hyphen), \u2012 (figure dash), \u2013 (en dash), \u2014 (em dash), \u2015 (horizontal bar), \u2212 (minus sign), \u00ad (soft hyphen)
+            slug = slug.replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212\u00ad_]/g, '-');
+            
+            // 2. Replace spaces with hyphens
+            slug = slug.replace(/\s+/g, '-');
+            
+            // 3. Remove all non-alphanumeric characters except hyphens
+            slug = slug.replace(/[^a-z0-9-]/g, '');
+            
+            // 4. Collapse multiple hyphens into single hyphen
+            slug = slug.replace(/-+/g, '-');
+            
+            // 5. Trim hyphens from start and end
+            slug = slug.replace(/^-+|-+$/g, '');
+            
+            return slug;
+        }
+
+        function showToast() {
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
